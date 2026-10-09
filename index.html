@@ -172,4 +172,171 @@
             score: 0
         };
 
-        let mouse = { x: canvas.width / 2, y: canvas
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+        let bubbles = [];
+        let isGameOver = false;
+
+        // Speech Synthesis Setup
+        function speakWord(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Spawn a bubble into the world
+        // forcedType: true = guaranteed correct, false = guaranteed wrong, null = random
+        function spawnBubble(forcedType = null) {
+            const isCorrect = (forcedType !== null) ? forcedType : (Math.random() < 0.5);
+            const randomPair = SHORT_VOWEL_PAIRS[Math.floor(Math.random() * SHORT_VOWEL_PAIRS.length)];
+
+            const wordText = isCorrect ? randomPair.correct : randomPair.wrong;
+
+            bubbles.push({
+                x: Math.random() * (canvas.width - 100) + 50,
+                y: Math.random() * (canvas.height - 100) + 50,
+                radius: 28,
+                word: wordText,
+                isValid: isCorrect,
+                correctVersion: randomPair.correct
+            });
+        }
+
+        // Initialize board with exact 50/50 balance
+        function initBubbles(totalCount = 16) {
+            bubbles = [];
+            const correctCount = Math.floor(totalCount / 2);
+            const wrongCount = totalCount - correctCount;
+
+            for (let i = 0; i < correctCount; i++) {
+                spawnBubble(true);
+            }
+            for (let i = 0; i < wrongCount; i++) {
+                spawnBubble(false);
+            }
+        }
+
+        function resetGame() {
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.radius = 30;
+            player.score = 0;
+            isGameOver = false;
+            document.getElementById("score").textContent = player.score;
+            document.getElementById("size").textContent = Math.round(player.radius);
+            document.getElementById("game-over").style.display = "none";
+            initBubbles();
+            gameLoop();
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            // Smooth movement toward mouse cursor
+            player.x += (mouse.x - player.x) * player.speed;
+            player.y += (mouse.y - player.y) * player.speed;
+
+            // Keep player inside canvas
+            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+
+            // Collision Detection with Bubbles
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                let b = bubbles[i];
+                let dist = Math.hypot(player.x - b.x, player.y - b.y);
+
+                if (dist < player.radius + b.radius) {
+                    if (b.isValid) {
+                        // Correct Word Collected -> Speak out loud!
+                        speakWord(b.word);
+
+                        player.score += 10;
+                        player.radius += 1.2;
+                        document.getElementById("score").textContent = player.score;
+                        document.getElementById("size").textContent = Math.round(player.radius);
+
+                        bubbles.splice(i, 1);
+                        
+                        // Guaranteed respawn of a correct word
+                        spawnBubble(true);
+                    } else {
+                        // Misspelled Word Hit - Game Over
+                        isGameOver = true;
+                        speakWord("Oops! " + b.word + " is incorrect.");
+
+                        document.getElementById("error-message").innerHTML = 
+                            `<strong>"${b.word.toUpperCase()}"</strong> has an incorrect vowel sound!<br>The correct short vowel spelling is: <strong>"${b.correctVersion.toUpperCase()}"</strong>.`;
+                        document.getElementById("game-over").style.display = "block";
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Word Bubbles
+            bubbles.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "#3a3a5c";
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#4ecca3";
+                ctx.stroke();
+
+                // Draw Word Text
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(b.word, b.x, b.y);
+            });
+
+            // Draw Player
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+
+            // Draw Player Eye pointing to cursor
+            ctx.beginPath();
+            let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+            let eyeX = player.x + Math.cos(angle) * (player.radius * 0.5);
+            let eyeY = player.y + Math.sin(angle) * (player.radius * 0.5);
+            ctx.arc(eyeX, eyeY, player.radius * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = "#1e1e2f";
+            ctx.fill();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            if (!isGameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Start Game
+        initBubbles();
+        gameLoop();
+    </script>
+</body>
+</html>
