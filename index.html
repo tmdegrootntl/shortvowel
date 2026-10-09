@@ -116,25 +116,28 @@
         resizeCanvas();
         window.addEventListener("resize", resizeCanvas);
 
-        // Word Bank: Guaranteed REAL short vowel words vs CLEAR fake nonsense traps
+        // GUARANTEED REAL Short Vowel Words vs GUARANTEED UNAMBIGUOUS FAKE TRAPS
         const PAIRS = [
             // Short A
             { c: "cat",  w: "katt" },
             { c: "map",  w: "mapp" },
             { c: "van",  w: "vann" },
+            { c: "cap",  w: "capp" },
             { c: "trap", w: "trapp" },
             { c: "crab", w: "krab" },
 
             // Short E
-            { c: "bed",  w: "beed" },
+            { c: "bed",  w: "bedd" },
             { c: "pen",  w: "penn" },
             { c: "red",  w: "redd" },
             { c: "leg",  w: "legg" },
+            { c: "wet",  w: "wett" },
 
             // Short I
             { c: "pig",  w: "pyg" },
             { c: "fin",  w: "fynn" },
             { c: "sit",  w: "sitt" },
+            { c: "win",  w: "winn" },
             { c: "swim", w: "swym" },
 
             // Short O
@@ -142,11 +145,13 @@
             { c: "pot",  w: "pott" },
             { c: "fox",  w: "foks" },
             { c: "frog", w: "frogg" },
+            { c: "hop",  w: "hopp" },
 
             // Short U
             { c: "sun",  w: "sonn" },
             { c: "bus",  w: "buss" },
             { c: "cup",  w: "cupp" },
+            { c: "mud",  w: "mudd" },
             { c: "drum", w: "drumm" }
         ];
 
