@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phonics.io - Short Vowel Word Collector</title>
+    <title>Phonics.io - Short Vowel Proofreader</title>
     <style>
         body {
             margin: 0;
@@ -30,7 +30,7 @@
         }
 
         .target-box {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             padding: 10px 25px;
             border-radius: 20px;
             border: 2px solid #4ecca3;
@@ -39,7 +39,7 @@
 
         h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 22px;
             color: #4ecca3;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -67,7 +67,7 @@
             background: rgba(0, 0, 0, 0.85);
             padding: 30px;
             border-radius: 15px;
-            border: 2px solid #e63946;
+            border: 2px solid #f72585;
         }
 
         button {
@@ -83,7 +83,7 @@
         }
 
         button:hover {
-            background: #3db892;
+            background: #38b28a;
         }
     </style>
 </head>
@@ -91,8 +91,8 @@
 
     <div id="ui">
         <div class="target-box">
-            <span id="instruction">Collect: </span>
-            <h1 id="target-sound">Short A Words</h1>
+            <span>Mission: </span>
+            <h1 id="target-sound">Collect CORRECT Short Vowel Words!</h1>
         </div>
     </div>
 
@@ -101,8 +101,8 @@
     </div>
 
     <div id="game-over">
-        <h2 style="color: #e63946;">Oops! Wrong Word!</h2>
-        <p id="error-message">You hit the wrong vowel sound!</p>
+        <h2 style="color: #f72585;">Vowel Error Hit!</h2>
+        <p id="error-message">You hit a misspelled word!</p>
         <button onclick="resetGame()">Try Again</button>
     </div>
 
@@ -115,17 +115,52 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Phonics Word Database (CVC & CCVC)
-        const WORD_BANK = {
-            "Short A": ["cat", "map", "van", "trap", "crab", "flag", "glad"],
-            "Short E": ["bed", "pen", "red", "sled", "step", "fled"],
-            "Short I": ["pig", "fin", "sit", "swim", "drip", "skip", "spin"],
-            "Short O": ["mop", "pot", "fox", "frog", "drop", "stop", "spot"],
-            "Short U": ["sun", "bus", "cup", "drum", "plum", "plug", "shut"]
-        };
+        // CVC & CCVC Word Pairs: [Correct Spelled Word, Misspelled Vowel Trap]
+        const SHORT_VOWEL_PAIRS = [
+            // Short A
+            { correct: "cat",  wrong: "cet" },
+            { correct: "map",  wrong: "mep" },
+            { correct: "van",  wrong: "ven" },
+            { correct: "trap", wrong: "trep" },
+            { correct: "crab", wrong: "creb" },
+            { correct: "flag", wrong: "fleg" },
+            { correct: "glad", wrong: "gled" },
 
-        const VOWELS = Object.keys(WORD_BANK);
-        let currentTargetVowel = "Short A";
+            // Short E
+            { correct: "bed",  wrong: "bad" },
+            { correct: "pen",  wrong: "pan" },
+            { correct: "red",  wrong: "rad" },
+            { correct: "sled", wrong: "slad" },
+            { correct: "step", wrong: "stap" },
+            { correct: "fled", wrong: "flad" },
+
+            // Short I
+            { correct: "pig",  wrong: "peg" },
+            { correct: "fin",  wrong: "fen" },
+            { correct: "sit",  wrong: "set" },
+            { correct: "swim", wrong: "swem" },
+            { correct: "drip", wrong: "drep" },
+            { correct: "skip", wrong: "skep" },
+            { correct: "spin", wrong: "spen" },
+
+            // Short O
+            { correct: "mop",  wrong: "mup" },
+            { correct: "pot",  wrong: "put" },
+            { correct: "fox",  wrong: "fux" },
+            { correct: "frog", wrong: "freg" },
+            { correct: "drop", wrong: "drup" },
+            { correct: "stop", wrong: "staup" },
+            { correct: "spot", wrong: "sput" },
+
+            // Short U
+            { correct: "sun",  wrong: "sonn" },
+            { correct: "bus",  wrong: "bos" },
+            { correct: "cup",  wrong: "cop" },
+            { correct: "drum", wrong: "drom" },
+            { correct: "plum", wrong: "plom" },
+            { correct: "plug", wrong: "plog" },
+            { correct: "shut", wrong: "shot" }
+        ];
 
         // Player object
         let player = {
@@ -137,167 +172,4 @@
             score: 0
         };
 
-        let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
-        let bubbles = [];
-        let isGameOver = false;
-
-        // Mouse tracking
-        window.addEventListener("mousemove", (e) => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        });
-
-        window.addEventListener("resize", () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // Select a new target sound target
-        function setNextTarget() {
-            const keys = Object.keys(WORD_BANK);
-            currentTargetVowel = keys[Math.floor(Math.random() * keys.length)];
-            document.getElementById("target-sound").textContent = currentTargetVowel + " Words";
-        }
-
-        // Spawn food bubbles into the world
-        function spawnBubble() {
-            // Decide if this bubble is correct or incorrect
-            const isCorrect = Math.random() < 0.4; 
-            let vowelKey = currentTargetVowel;
-
-            if (!isCorrect) {
-                const otherVowels = VOWELS.filter(v => v !== currentTargetVowel);
-                vowelKey = otherVowels[Math.floor(Math.random() * otherVowels.length)];
-            }
-
-            const wordList = WORD_BANK[vowelKey];
-            const word = wordList[Math.floor(Math.random() * wordList.length)];
-
-            bubbles.push({
-                x: Math.random() * (canvas.width - 100) + 50,
-                y: Math.random() * (canvas.height - 100) + 50,
-                radius: 28,
-                word: word,
-                vowelCategory: vowelKey,
-                color: isCorrect ? "#2a9d8f" : "#e76f51"
-            });
-        }
-
-        function initBubbles(count = 15) {
-            bubbles = [];
-            for (let i = 0; i < count; i++) {
-                spawnBubble();
-            }
-        }
-
-        function resetGame() {
-            player.x = canvas.width / 2;
-            player.y = canvas.height / 2;
-            player.radius = 30;
-            player.score = 0;
-            isGameOver = false;
-            document.getElementById("score").textContent = player.score;
-            document.getElementById("size").textContent = Math.round(player.radius);
-            document.getElementById("game-over").style.display = "none";
-            setNextTarget();
-            initBubbles();
-            gameLoop();
-        }
-
-        function update() {
-            if (isGameOver) return;
-
-            // Smooth movement toward mouse cursor (.io style mechanics)
-            player.x += (mouse.x - player.x) * player.speed;
-            player.y += (mouse.y - player.y) * player.speed;
-
-            // Keep player inside canvas
-            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
-            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
-
-            // Collision Detection with Bubbles
-            for (let i = bubbles.length - 1; i >= 0; i--) {
-                let b = bubbles[i];
-                let dist = Math.hypot(player.x - b.x, player.y - b.y);
-
-                if (dist < player.radius + b.radius) {
-                    if (b.vowelCategory === currentTargetVowel) {
-                        // Correct Word Collected
-                        player.score += 10;
-                        player.radius += 1.5;
-                        document.getElementById("score").textContent = player.score;
-                        document.getElementById("size").textContent = Math.round(player.radius);
-
-                        bubbles.splice(i, 1);
-                        spawnBubble();
-
-                        // Every 50 points, change target sound
-                        if (player.score % 50 === 0) {
-                            setNextTarget();
-                        }
-                    } else {
-                        // Wrong Word Hit - Game Over
-                        isGameOver = true;
-                        document.getElementById("error-message").textContent = 
-                            `"${b.word.toUpperCase()}" is a ${b.vowelCategory} word!`;
-                        document.getElementById("game-over").style.display = "block";
-                    }
-                }
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Word Bubbles
-            bubbles.forEach(b => {
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-                ctx.fillStyle = "#264653";
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = "#e9c46a";
-                ctx.stroke();
-
-                // Draw Word Text
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 16px Arial";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(b.word, b.x, b.y);
-            });
-
-            // Draw Player
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fillStyle = player.color;
-            ctx.fill();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = "#ffffff";
-            ctx.stroke();
-
-            // Draw Player Eye / Arrow pointing to cursor
-            ctx.beginPath();
-            let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-            let eyeX = player.x + Math.cos(angle) * (player.radius * 0.5);
-            let eyeY = player.y + Math.sin(angle) * (player.radius * 0.5);
-            ctx.arc(eyeX, eyeY, player.radius * 0.2, 0, Math.PI * 2);
-            ctx.fillStyle = "#1e1e2f";
-            ctx.fill();
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            if (!isGameOver) {
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        // Start Game
-        setNextTarget();
-        initBubbles();
-        gameLoop();
-    </script>
-</body>
-</html>
+        let mouse = { x: canvas.width / 2, y: canvas
