@@ -92,13 +92,13 @@
     <!-- Start Overlay -->
     <div id="start-screen" class="modal">
         <h2 style="font-size: 24px;">Phonics.io</h2>
-        <p>Move your circle to eat <b>CORRECT</b> short vowel words. Avoid misspelled trap words!</p>
+        <p>Eat <b>REAL</b> short vowel words. Avoid <b>FAKE nonsense</b> spelling traps!</p>
         <button onclick="startGame()">Click to Start Game</button>
     </div>
 
     <!-- Game Over Overlay -->
     <div id="game-over" class="modal">
-        <h2 style="color: #f72585; font-size: 24px;">Vowel Error Hit!</h2>
+        <h2 style="color: #f72585; font-size: 24px;">Nonsense Trap Hit!</h2>
         <p id="error-msg" style="font-size: 16px; line-height: 1.4;"></p>
         <button onclick="resetGame()">Play Again</button>
     </div>
@@ -116,12 +116,38 @@
         resizeCanvas();
         window.addEventListener("resize", resizeCanvas);
 
+        // Word Bank: Guaranteed REAL short vowel words vs CLEAR fake nonsense traps
         const PAIRS = [
-            { c: "cat", w: "cet" }, { c: "map", w: "mep" }, { c: "van", w: "ven" },
-            { c: "bed", w: "bad" }, { c: "pen", w: "pan" }, { c: "red", w: "rad" },
-            { c: "pig", w: "peg" }, { c: "fin", w: "fen" }, { c: "sit", w: "set" },
-            { c: "mop", w: "mup" }, { c: "pot", w: "put" }, { c: "fox", w: "fux" },
-            { c: "sun", w: "sonn" }, { c: "bus", w: "bos" }, { c: "cup", w: "cop" }
+            // Short A
+            { c: "cat",  w: "katt" },
+            { c: "map",  w: "mapp" },
+            { c: "van",  w: "vann" },
+            { c: "trap", w: "trapp" },
+            { c: "crab", w: "krab" },
+
+            // Short E
+            { c: "bed",  w: "beed" },
+            { c: "pen",  w: "penn" },
+            { c: "red",  w: "redd" },
+            { c: "leg",  w: "legg" },
+
+            // Short I
+            { c: "pig",  w: "pyg" },
+            { c: "fin",  w: "fynn" },
+            { c: "sit",  w: "sitt" },
+            { c: "swim", w: "swym" },
+
+            // Short O
+            { c: "mop",  w: "mopp" },
+            { c: "pot",  w: "pott" },
+            { c: "fox",  w: "foks" },
+            { c: "frog", w: "frogg" },
+
+            // Short U
+            { c: "sun",  w: "sonn" },
+            { c: "bus",  w: "buss" },
+            { c: "cup",  w: "cupp" },
+            { c: "drum", w: "drumm" }
         ];
 
         let player = { x: window.innerWidth / 2, y: window.innerHeight / 2, r: 28, score: 0 };
@@ -205,7 +231,7 @@
                     } else {
                         isGameOver = true;
                         document.getElementById("error-msg").innerHTML = 
-                            `<strong>"${b.word.toUpperCase()}"</strong> is incorrect!<br>Correct spelling: <strong>"${b.correct.toUpperCase()}"</strong>`;
+                            `<strong>"${b.word.toUpperCase()}"</strong> is a fake nonsense word!<br>Correct spelling: <strong>"${b.correct.toUpperCase()}"</strong>`;
                         document.getElementById("game-over").style.display = "block";
                     }
                 }
