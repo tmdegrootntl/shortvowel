@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phonics.io - Short Vowel Word Collector</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1e1e2f;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            user-select: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: radial-gradient(circle, #2a2a40 0%, #151522 100%);
+        }
+
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .target-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 25px;
+            border-radius: 20px;
+            border: 2px solid #4ecca3;
+            box-shadow: 0 0 15px rgba(78, 204, 163, 0.3);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #4ecca3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 16px;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #e63946;
+        }
+
+        button {
+            background: #4ecca3;
+            color: #1e1e2f;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background: #3db892;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="target-box">
+            <span id="instruction">Collect: </span>
+            <h1 id="target-sound">Short A Words</h1>
+        </div>
+    </div>
+
+    <div class="score-board">
+        Score: <span id="score">0</span> | Size: <span id="size">30</span>
+    </div>
+
+    <div id="game-over">
+        <h2 style="color: #e63946;">Oops! Wrong Word!</h2>
+        <p id="error-message">You hit the wrong vowel sound!</p>
+        <button onclick="resetGame()">Try Again</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Phonics Word Database (CVC & CCVC)
+        const WORD_BANK = {
+            "Short A": ["cat", "map", "van", "trap", "crab", "flag", "glad"],
+            "Short E": ["bed", "pen", "red", "sled", "step", "fled"],
+            "Short I": ["pig", "fin", "sit", "swim", "drip", "skip", "spin"],
+            "Short O": ["mop", "pot", "fox", "frog", "drop", "stop", "spot"],
+            "Short U": ["sun", "bus", "cup", "drum", "plum", "plug", "shut"]
+        };
+
+        const VOWELS = Object.keys(WORD_BANK);
+        let currentTargetVowel = "Short A";
+
+        // Player object
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 30,
+            color: "#4ecca3",
+            speed: 0.08,
+            score: 0
+        };
+
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+        let bubbles = [];
+        let isGameOver = false;
+
+        // Mouse tracking
+        window.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Select a new target sound target
+        function setNextTarget() {
+            const keys = Object.keys(WORD_BANK);
+            currentTargetVowel = keys[Math.floor(Math.random() * keys.length)];
+            document.getElementById("target-sound").textContent = currentTargetVowel + " Words";
+        }
+
+        // Spawn food bubbles into the world
+        function spawnBubble() {
+            // Decide if this bubble is correct or incorrect
+            const isCorrect = Math.random() < 0.4; 
+            let vowelKey = currentTargetVowel;
+
+            if (!isCorrect) {
+                const otherVowels = VOWELS.filter(v => v !== currentTargetVowel);
+                vowelKey = otherVowels[Math.floor(Math.random() * otherVowels.length)];
+            }
+
+            const wordList = WORD_BANK[vowelKey];
+            const word = wordList[Math.floor(Math.random() * wordList.length)];
+
+            bubbles.push({
+                x: Math.random() * (canvas.width - 100) + 50,
+                y: Math.random() * (canvas.height - 100) + 50,
+                radius: 28,
+                word: word,
+                vowelCategory: vowelKey,
+                color: isCorrect ? "#2a9d8f" : "#e76f51"
+            });
+        }
+
+        function initBubbles(count = 15) {
+            bubbles = [];
+            for (let i = 0; i < count; i++) {
+                spawnBubble();
+            }
+        }
+
+        function resetGame() {
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.radius = 30;
+            player.score = 0;
+            isGameOver = false;
+            document.getElementById("score").textContent = player.score;
+            document.getElementById("size").textContent = Math.round(player.radius);
+            document.getElementById("game-over").style.display = "none";
+            setNextTarget();
+            initBubbles();
+            gameLoop();
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            // Smooth movement toward mouse cursor (.io style mechanics)
+            player.x += (mouse.x - player.x) * player.speed;
+            player.y += (mouse.y - player.y) * player.speed;
+
+            // Keep player inside canvas
+            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+
+            // Collision Detection with Bubbles
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                let b = bubbles[i];
+                let dist = Math.hypot(player.x - b.x, player.y - b.y);
+
+                if (dist < player.radius + b.radius) {
+                    if (b.vowelCategory === currentTargetVowel) {
+                        // Correct Word Collected
+                        player.score += 10;
+                        player.radius += 1.5;
+                        document.getElementById("score").textContent = player.score;
+                        document.getElementById("size").textContent = Math.round(player.radius);
+
+                        bubbles.splice(i, 1);
+                        spawnBubble();
+
+                        // Every 50 points, change target sound
+                        if (player.score % 50 === 0) {
+                            setNextTarget();
+                        }
+                    } else {
+                        // Wrong Word Hit - Game Over
+                        isGameOver = true;
+                        document.getElementById("error-message").textContent = 
+                            `"${b.word.toUpperCase()}" is a ${b.vowelCategory} word!`;
+                        document.getElementById("game-over").style.display = "block";
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Word Bubbles
+            bubbles.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "#264653";
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#e9c46a";
+                ctx.stroke();
+
+                // Draw Word Text
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(b.word, b.x, b.y);
+            });
+
+            // Draw Player
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+
+            // Draw Player Eye / Arrow pointing to cursor
+            ctx.beginPath();
+            let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+            let eyeX = player.x + Math.cos(angle) * (player.radius * 0.5);
+            let eyeY = player.y + Math.sin(angle) * (player.radius * 0.5);
+            ctx.arc(eyeX, eyeY, player.radius * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = "#1e1e2f";
+            ctx.fill();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            if (!isGameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Start Game
+        setNextTarget();
+        initBubbles();
+        gameLoop();
+    </script>
+</body>
+</html>
