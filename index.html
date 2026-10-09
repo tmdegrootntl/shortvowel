@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Short Vowel Game</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         html, body {
             margin: 0;
             padding: 0;
@@ -52,50 +50,54 @@
             color: #4ecca3;
             text-transform: uppercase;
         }
-        .score-text {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        #game-over {
-            display: none;
+        .modal {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 25px 35px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
             border-radius: 15px;
-            border: 2px solid #f72585;
             text-align: center;
             z-index: 20;
-            box-shadow: 0 0 20px rgba(247, 37, 133, 0.4);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            width: 85%;
+            max-width: 400px;
         }
+        #start-screen { border: 2px solid #4ecca3; }
+        #game-over { display: none; border: 2px solid #f72585; }
         button {
             background: #4ecca3;
             color: #1e1e2f;
             border: none;
-            padding: 10px 22px;
-            font-size: 16px;
+            padding: 12px 25px;
+            font-size: 18px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
             margin-top: 15px;
         }
-        button:hover {
-            background: #38b28a;
-        }
+        button:hover { background: #38b28a; }
     </style>
 </head>
 <body>
 
     <div id="ui">
         <div class="box">
-            <h2>Collect Correct Short Vowel Words!</h2>
-            <div class="score-text">Score: <span id="score">0</span></div>
+            <h2>Short Vowel Proofreader</h2>
+            <div>Score: <span id="score">0</span></div>
         </div>
     </div>
 
-    <div id="game-over">
+    <!-- Start Overlay -->
+    <div id="start-screen" class="modal">
+        <h2 style="font-size: 24px;">Phonics.io</h2>
+        <p>Move your circle to eat <b>CORRECT</b> short vowel words. Avoid misspelled trap words!</p>
+        <button onclick="startGame()">Click to Start Game</button>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="game-over" class="modal">
         <h2 style="color: #f72585; font-size: 24px;">Vowel Error Hit!</h2>
         <p id="error-msg" style="font-size: 16px; line-height: 1.4;"></p>
         <button onclick="resetGame()">Play Again</button>
@@ -125,18 +127,22 @@
         let player = { x: window.innerWidth / 2, y: window.innerHeight / 2, r: 28, score: 0 };
         let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
         let bubbles = [];
+        let isPlaying = false;
         let isGameOver = false;
 
-        // Pointer controls (works for both mouse and touch)
         function updatePointer(e) {
+            let clientX = e.clientX;
+            let clientY = e.clientY;
             if (e.touches && e.touches[0]) {
-                mouse.x = e.touches[0].clientX;
-                mouse.y = e.touches[0].clientY;
-            } else {
-                mouse.x = e.clientX;
-                mouse.y = e.clientY;
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            if (clientX !== undefined && clientY !== undefined) {
+                mouse.x = clientX;
+                mouse.y = clientY;
             }
         }
+
         window.addEventListener("mousemove", updatePointer);
         window.addEventListener("touchmove", updatePointer);
         window.addEventListener("touchstart", updatePointer);
@@ -160,6 +166,12 @@
             for (let i = 0; i < 6; i++) spawn(false);
         }
 
+        function startGame() {
+            document.getElementById("start-screen").style.display = "none";
+            isPlaying = true;
+            resetGame();
+        }
+
         function resetGame() {
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
@@ -173,7 +185,7 @@
         }
 
         function update() {
-            if (isGameOver) return;
+            if (!isPlaying || isGameOver) return;
 
             player.x += (mouse.x - player.x) * 0.08;
             player.y += (mouse.y - player.y) * 0.08;
@@ -216,4 +228,23 @@
                 ctx.font = "bold 16px Arial";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText(b.word, b.x, b.y
+                ctx.fillText(b.word, b.x, b.y);
+            });
+
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+            ctx.fillStyle = "#4ecca3";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function loop() {
+            update();
+            draw();
+            if (isPlaying && !isGameOver) requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+</html>
